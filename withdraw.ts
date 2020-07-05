@@ -1,0 +1,73 @@
+import {ethers} from "ethers";
+
+import {Feed} from "./client/models/feed";
+import {Market} from "./client/market";
+import {log} from "./logger";
+import {fluxAggregatorAbi} from "./abi";
+
+const market = new Market()
+
+const walletAddress = process.env.WALLET_ADDRESS || "0x501698a6f6f762c79e4d28e3815c135e3f9af996"
+const rpcUrl = process.env.RPC_URL || "http://localhost:8545"
+const privateKey = process.env.PRIVATE_KEY || ""
+const withdrawTo = process.env.WITHDRAW_TO || ""
+
+const gasPrice = process.env.GAS_PRICE || 20000000000 // 20 Gwei
+const txOptions = {gasPrice: gasPrice}
+
+async function scanFeeds(walletAddress: string, batchSize: number = 20): Promise<Feed[]> {
+    let page = await market.getFeeds(1, 0)
+    const totalCount = page.totalCount
+
+    let matchedFeeds: Feed[] = []
+    for (let i = 1; i * batchSize < totalCount; i++) {
+        let feedPage = await market.getFeeds(i, batchSize)
+        matchedFeeds.push(...matchFeeds(walletAddress, feedPage.data))
+    }
+
+    return matchedFeeds
+}
+
+function matchFeeds(walletAddress: string, feeds: Feed[]): Feed[] {
+    let matchedFeeds: Feed[] = []
+    feeds.forEach(function (feed) {
+        feed.walletAddresses?.forEach(value => {
+            if (value.toLowerCase() === walletAddress.toLowerCase()) {
+                matchedFeeds.push(feed)
+            }
+        })
+    })
+    return matchedFeeds
+}
+
+function newWallet(privateKey: string, rpcUrl: string): ethers.Wallet {
+    let provider = new ethers.providers.JsonRpcProvider(rpcUrl)
+    return new ethers.Wallet(privateKey, provider)
+}
+
+async function withdrawFromFeed(feed: Feed, wallet: ethers.Wallet) {
+    const feedContract = new ethers.Contract(feed.contractAddress.toString(), fluxAggregatorAbi, wallet)
+    let withdrawableAmount = await feedContract.withdrawablePayment(walletAddress)
+    log.info("Withdrawing amount " + ethers.utils.formatEther(withdrawableAmount) + " LINK from feed " + feed.contractAddress + ", to " + withdrawTo)
+    await feedContract.withdrawPayment(walletAddress, withdrawTo, withdrawableAmount, txOptions)
+}
+
+async function run() {
+    if (withdrawTo.length == 0 || privateKey.length == 0) {
+        log.error("PRIVATE_KEY or WITHDRAW_TO isn't set", null)
+        process.exit(1)
+    }
+
+    log.info("Scanning market.link for feeds")
+    let feeds = await scanFeeds(walletAddress)
+    log.info("Matched " + feeds.length + " feeds, performing withdrawals")
+
+    let wallet = newWallet(privateKey, rpcUrl)
+    for (const feed of feeds) {
+        await withdrawFromFeed(feed, wallet)
+    }
+
+    log.info("Done")
+}
+
+run()
