@@ -5,11 +5,11 @@ import {Page} from "./models/page";
 class Market {
     rest: rm.RestClient
 
-    constructor(baseURL: string = "https://market.link", userAgent: string = 'flux-link-withdrawal') {
+    constructor(baseURL = "https://market.link", userAgent = 'flux-link-withdrawal') {
         this.rest = new rm.RestClient(userAgent, baseURL)
     }
 
-    async getFeeds(page: number, size: number = 20, networkId: number = 1): Promise<Page<Feed[]>> {
+    async getFeeds(page: number, size = 20, networkId = 1): Promise<Page<Feed[]>> {
         const response: rm.IRestResponse<Page<Feed[]>> = await this.rest.get<Page<Feed[]>>('/v1/feeds/', {
             queryParameters: {
                 params: {

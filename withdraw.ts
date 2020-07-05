@@ -15,13 +15,13 @@ const withdrawTo = process.env.WITHDRAW_TO || ""
 const gasPrice = process.env.GAS_PRICE || 20000000000 // 20 Gwei
 const txOptions = {gasPrice: gasPrice}
 
-async function scanFeeds(walletAddress: string, batchSize: number = 20): Promise<Feed[]> {
-    let page = await market.getFeeds(1, 0)
+async function scanFeeds(walletAddress: string, batchSize = 20): Promise<Feed[]> {
+    const page = await market.getFeeds(1, 0)
     const totalCount = page.totalCount
 
-    let matchedFeeds: Feed[] = []
+    const matchedFeeds: Feed[] = []
     for (let i = 1; i * batchSize < totalCount; i++) {
-        let feedPage = await market.getFeeds(i, batchSize)
+        const feedPage = await market.getFeeds(i, batchSize)
         matchedFeeds.push(...matchFeeds(walletAddress, feedPage.data))
     }
 
@@ -29,7 +29,7 @@ async function scanFeeds(walletAddress: string, batchSize: number = 20): Promise
 }
 
 function matchFeeds(walletAddress: string, feeds: Feed[]): Feed[] {
-    let matchedFeeds: Feed[] = []
+    const matchedFeeds: Feed[] = []
     feeds.forEach(function (feed) {
         feed.walletAddresses?.forEach(value => {
             if (value.toLowerCase() === walletAddress.toLowerCase()) {
@@ -41,13 +41,13 @@ function matchFeeds(walletAddress: string, feeds: Feed[]): Feed[] {
 }
 
 function newWallet(privateKey: string, rpcUrl: string): ethers.Wallet {
-    let provider = new ethers.providers.JsonRpcProvider(rpcUrl)
+    const provider = new ethers.providers.JsonRpcProvider(rpcUrl)
     return new ethers.Wallet(privateKey, provider)
 }
 
 async function withdrawFromFeed(feed: Feed, wallet: ethers.Wallet) {
     const feedContract = new ethers.Contract(feed.contractAddress.toString(), fluxAggregatorAbi, wallet)
-    let withdrawableAmount = await feedContract.withdrawablePayment(walletAddress)
+    const withdrawableAmount = await feedContract.withdrawablePayment(walletAddress)
     log.info("Withdrawing amount " + ethers.utils.formatEther(withdrawableAmount) + " LINK from feed " + feed.contractAddress + ", to " + withdrawTo)
     await feedContract.withdrawPayment(walletAddress, withdrawTo, withdrawableAmount, txOptions)
 }
@@ -59,10 +59,10 @@ async function run() {
     }
 
     log.info("Scanning market.link for feeds")
-    let feeds = await scanFeeds(walletAddress)
+    const feeds = await scanFeeds(walletAddress)
     log.info("Matched " + feeds.length + " feeds, performing withdrawals")
 
-    let wallet = newWallet(privateKey, rpcUrl)
+    const wallet = newWallet(privateKey, rpcUrl)
     for (const feed of feeds) {
         await withdrawFromFeed(feed, wallet)
     }
