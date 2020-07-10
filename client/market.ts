@@ -14,7 +14,8 @@ class Market {
             queryParameters: {
                 params: {
                     "networkId": networkId,
-                    "page": page
+                    "page": page,
+                    "size": size
                 }
             }
         })
