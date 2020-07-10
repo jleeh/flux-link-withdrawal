@@ -20,7 +20,8 @@ async function scanFeeds(walletAddress: string, batchSize = 20): Promise<Feed[]>
     const totalCount = page.totalCount
 
     const matchedFeeds: Feed[] = []
-    for (let i = 1; i * batchSize < totalCount; i++) {
+    const totalPage = Math.ceil(totalCount / batchSize)
+    for (let i = 1; i <= totalPage; i++) {
         const feedPage = await market.getFeeds(i, batchSize)
         matchedFeeds.push(...matchFeeds(walletAddress, feedPage.data))
     }
