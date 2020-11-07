@@ -11,6 +11,7 @@ const walletAddress = process.env.WALLET_ADDRESS || "0x501698a6f6f762c79e4d28e38
 const rpcUrl = process.env.RPC_URL || "http://localhost:8545"
 const privateKey = process.env.PRIVATE_KEY || ""
 const withdrawTo = process.env.WITHDRAW_TO || ""
+const dryRun = process.env.DRY_RUN || ""
 
 const gasPrice = process.env.GAS_PRICE || 20000000000 // 20 Gwei
 const txOptions = {gasPrice: gasPrice}
@@ -50,7 +51,11 @@ async function withdrawFromFeed(feed: Feed, wallet: ethers.Wallet) {
     const feedContract = new ethers.Contract(feed.contractAddress.toString(), fluxAggregatorAbi, wallet)
     const withdrawableAmount = await feedContract.withdrawablePayment(walletAddress)
     log.info("Withdrawing amount " + ethers.utils.formatEther(withdrawableAmount) + " LINK from feed " + feed.contractAddress + ", to " + withdrawTo)
-    await feedContract.withdrawPayment(walletAddress, withdrawTo, withdrawableAmount, txOptions)
+    if (dryRun) {
+      log.debug("Dry run, skipping withdrawal")
+    } else {
+      await feedContract.withdrawPayment(walletAddress, withdrawTo, withdrawableAmount, txOptions)
+    }
 }
 
 async function run() {
