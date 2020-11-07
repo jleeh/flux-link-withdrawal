@@ -19,6 +19,7 @@ yarn
 | PRIVATE_KEY    | null                                       | The private key of the admin wallet added within the deployed FluxAggregator.sol contracts, used to send the withdraw transactions. |
 | WITHDRAW_TO    | null                                       | The Ethereum address to withdraw the earned LINK to.                                                                                |
 | GAS_PRICE      | 20000000000                                | The gas price in wei to use when sending the withdraw transactions.                                                                 |
+| DRY_RUN        | null                                       | Simulate withdrawal, but skip performing transactions.
 
 ### Run Locally
 
